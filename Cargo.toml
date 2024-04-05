@@ -17,4 +17,5 @@ vizia = {git = "https://github.com/vizia/vizia"}
 #  Changelog
 #  
 #  04/04/24 -- v0.1.0 -  Initial Release
-#  04/05/24 -- v0.1.1 -  Timer counts down instead of up.  
+#  04/05/24 -- v0.1.1 -  Timer counts down instead of up. 
+#  04/05/24 -- v0.1.2 -  Ping function now supports variably sized payload.  

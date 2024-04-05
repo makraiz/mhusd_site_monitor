@@ -136,7 +136,7 @@ async fn tokio_main(rx: mpsc::Receiver<TokioEvent>, sites: BTreeMap<String, IpAd
                                         client_v4.clone(),
                                         site,
                                         DEF_TIMEOUT,
-                                        DEF_PAYLOAD,
+                                        &DEF_PAYLOAD,
                                     ));
                                 }
                                 IpAddr::V6(_) => {
@@ -145,7 +145,7 @@ async fn tokio_main(rx: mpsc::Receiver<TokioEvent>, sites: BTreeMap<String, IpAd
                                         client_v6.clone(),
                                         site,
                                         DEF_TIMEOUT,
-                                        DEF_PAYLOAD,
+                                        &DEF_PAYLOAD,
                                     ));
                                 }
                             }
@@ -164,7 +164,7 @@ async fn ping(
     client: Client,
     site: SiteAddress,
     timeout: u64,
-    payload: [u8; 256],
+    payload: &[u8],
 ) {
     // Create the pinger.
     let mut pinger = client.pinger(site.addr, PingIdentifier(random())).await;
