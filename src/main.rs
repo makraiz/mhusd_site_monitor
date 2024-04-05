@@ -180,10 +180,16 @@ async fn ping(
             name: site.name,
             response: format!("{dur:0.2?}"),
         })),
-        Err(e) => cx.emit(ViziaEvent::PingResponse(PingResponse {
-            name: site.name,
-            response: format!("{e:?}"),
-        })),
+        Err(e) => {
+            let msg = match e {
+                surge_ping::SurgeError::Timeout { seq: _ } => format!("Timeout"),
+                _ => format!("{e}"),
+            };
+            cx.emit(ViziaEvent::PingResponse(PingResponse {
+                name: site.name,
+                response: msg,
+            }))
+        }, 
     };
 }
 
@@ -200,6 +206,9 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
             _ => {}
         });
 
+        // First round of pings.
+        let _ = tx.send(TokioEvent::TimerElapsed);
+
         // Create the data model for the GUI context.
         AppData {
             sites,
@@ -208,6 +217,7 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
             tx,
         }
         .build(cx);
+        
         cx.start_timer(timer);
 
         // Window Layout
@@ -217,39 +227,49 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
                 List::new(cx, AppData::sites, |cx, _, site| {
                     HStack::new(cx, |cx| {
                         Label::new(cx, site.then(PingResponse::name))
+                            .class("siteName")
                             .child_left(Pixels(20.0))
                             .child_right(Stretch(1.0));
                         Label::new(cx, site.then(PingResponse::response))
+                            .class("siteResponse")
                             .child_left(Stretch(1.0))
                             .child_right(Pixels(20.0));
                     })
+                    .class("siteRow")
                     .col_between(Stretch(1.0));
                 })
                 .row_between(Pixels(20.0));
             })
-            .child_space(Pixels(20.0));
+            .child_space(Pixels(20.0))
+            .class("leftPane");
 
             // Right side, timer countdown and controls (eventually).
             VStack::new(cx, |cx| {
-                HStack::new(cx, |_cx| {}); // Exists to take top spot in Vstack
+                HStack::new(cx, |_cx| {})  // Exists to take top spot in Vstack
+                .class("menuPane");
                 HStack::new(cx, |cx| {
-                    Label::new(cx, "Ping Interval")
+                    Label::new(cx, "Next refresh in:")
+                        .class("timerLabel")
                         .child_top(Stretch(1.0))
                         .child_bottom(Pixels(0.0))
                         .child_left(Pixels(20.0))
                         .child_right(Stretch(1.0));
                     Label::new(cx, AppData::timer_count)
+                        .class("timerCount")
                         .child_top(Stretch(1.0))
                         .child_bottom(Pixels(0.0))
                         .child_left(Stretch(1.0))
                         .child_right(Pixels(20.0));
                 })
+                .class("timerPane")
                 .col_between(Stretch(1.0))
                 .child_space(Pixels(20.0));
             })
+            .class("rightPane")
             .row_between(Stretch(1.0))
             .child_space(Pixels(20.0));
-        });
+        })
+        .class("windowBody");
     })
     .run();
 }
@@ -260,7 +280,7 @@ fn sites_to_pings(sites: BTreeMap<String, IpAddr>) -> Vec<PingResponse> {
     for (name, _) in sites {
         map.push(PingResponse {
             name,
-            response: String::from("Pending"),
+            response: String::from("Pending..."),
         });
     }
     map
