@@ -53,14 +53,14 @@ impl Model for AppData {
         event.map(|app_event, _| {
             match app_event {
                 ViziaEvent::TimerIncrement => {
-                    self.timer_count += 1;
-                    if self.timer_count >= 30 {
+                    self.timer_count -= 1;
+                    if self.timer_count <= 0 {
                         cx.emit(ViziaEvent::TimerReset);
                     }
                 }
                 ViziaEvent::TimerReset => {
                     let _ = self.tx.send(TokioEvent::TimerElapsed); // TODO: Handle potential errors.
-                    self.timer_count = 0;
+                    self.timer_count = 30;
                 }
                 ViziaEvent::PingResponse(response) => {
                     if let Some(i) = self
@@ -204,7 +204,7 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
         AppData {
             sites,
             timer,
-            timer_count: 0,
+            timer_count: 30,
             tx,
         }
         .build(cx);
