@@ -43,7 +43,7 @@ enum ViziaEvent {
 }
 
 /// Application data / model.  
-#[derive(Lens)]
+#[derive(Lens, Clone)]
 struct AppData {
     sites: Vec<PingResponse>,
     timer: Timer,
@@ -87,10 +87,11 @@ struct SiteAddress {
 }
 
 /// Data structure for site name & ping response.  
-#[derive(Lens, Clone)]
+#[derive(Lens, Clone, PartialEq, Data)]
 struct PingResponse {
     name: String,
     response: String,
+    is_err: bool,
 }
 
 /// Initates the runtime loop.  Must send ContextProxy first over mpsc channel, else panic!  
@@ -177,10 +178,12 @@ async fn ping(
         Ok((IcmpPacket::V4(_packet), dur)) => cx.emit(ViziaEvent::PingResponse(PingResponse {
             name: site.name,
             response: format!("{dur:0.2?}"),
+            is_err: false,
         })),
         Ok((IcmpPacket::V6(_packet), dur)) => cx.emit(ViziaEvent::PingResponse(PingResponse {
             name: site.name,
             response: format!("{dur:0.2?}"),
+            is_err: false,
         })),
         Err(e) => {
             let msg = match e {
@@ -190,6 +193,7 @@ async fn ping(
             cx.emit(ViziaEvent::PingResponse(PingResponse {
                 name: site.name,
                 response: msg,
+                is_err: true,
             }))
         }, 
     };
@@ -238,7 +242,8 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
                             .child_right(Pixels(20.0));
                     })
                     .class("siteRow")
-                    .col_between(Stretch(1.0));
+                    .col_between(Stretch(1.0))
+                    .toggle_class("siteRowError", site.then(PingResponse::is_err));                    
                 })
                 .row_between(Pixels(20.0));
             })
@@ -283,6 +288,7 @@ fn sites_to_pings(sites: BTreeMap<String, IpAddr>) -> Vec<PingResponse> {
         map.push(PingResponse {
             name,
             response: String::from("Pending..."),
+            is_err: false,
         });
     }
     map
