@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use std::{collections::BTreeMap, fs, net::IpAddr, path::Path};
 
 use rand::random;
@@ -153,7 +155,7 @@ async fn tokio_main(rx: mpsc::Receiver<TokioEvent>, sites: BTreeMap<String, IpAd
                     }
                 }
             }
-            Err(_e) => panic!("Window was closed, shutting down."),
+            Err(_e) => {},
         }
     }
 }
