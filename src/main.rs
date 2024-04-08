@@ -226,26 +226,23 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
         
         cx.start_timer(timer);
 
+        cx.add_stylesheet(include_style!("style.css")).expect("Failed to load style sheet!");
+
         // Window Layout
         HStack::new(cx, |cx| {
             // Left side, site names and responses.
             List::new(cx, AppData::sites, |cx, _, site| {
                 HStack::new(cx, |cx| {
                     Label::new(cx, site.then(PingResponse::name))
-                        .class("siteName")
-                        .child_left(Pixels(20.0))
-                        .child_right(Stretch(1.0));
+                        .class("siteName");
                     Label::new(cx, site.then(PingResponse::response))
-                        .class("siteResponse")
-                        .child_left(Stretch(1.0))
-                        .child_right(Pixels(20.0));
+                        .class("siteResponse");
                 })
-                .class("siteRow")
                 .col_between(Stretch(1.0))
+                .class("siteRow")
                 .toggle_class("siteRowError", site.then(PingResponse::is_err));                    
             })
-            .class("leftPane")
-            .row_between(Pixels(20.0));
+            .class("leftPane");
 
             // Right side, timer countdown and controls (eventually).
             VStack::new(cx, |cx| {
@@ -253,28 +250,19 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
                 .class("menuPane");
                 HStack::new(cx, |cx| {
                     Label::new(cx, "Next refresh in:")
-                        .class("timerLabel")
-                        .child_top(Stretch(1.0))
-                        .child_bottom(Pixels(0.0))
-                        .child_left(Pixels(20.0))
-                        .child_right(Stretch(1.0));
+                        .class("timerLabel");
                     Label::new(cx, AppData::timer_count)
-                        .class("timerCount")
-                        .child_top(Stretch(1.0))
-                        .child_bottom(Pixels(0.0))
-                        .child_left(Stretch(1.0))
-                        .child_right(Pixels(20.0));
+                        .class("timerCount");
                 })
                 .class("timerPane")
-                .col_between(Stretch(1.0))
-                .child_space(Pixels(20.0));
+                .col_between(Stretch(1.0));
             })
             .class("rightPane")
-            .row_between(Stretch(1.0))
-            .child_space(Pixels(20.0));
+            .row_between(Stretch(1.0));
         })
         .class("windowBody");
     })
+    .title("MHUSD Site Monitor")
     .run();
 }
 

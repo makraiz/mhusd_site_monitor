@@ -1,0 +1,53 @@
+.windowBody {
+    background-color: black;
+}
+
+/* Left side */
+.leftPane {}
+
+.siteRow {
+    position: relative;
+    bottom: 20px;
+}
+
+.siteRowError > .siteResponse {
+    color: red;
+}
+
+.siteRowError > .siteName {
+    color: red;
+}
+
+.siteName, .siteResponse {
+    position: relative;
+    color: lime;
+}
+
+.siteName {
+    left: 20px;
+}
+
+.siteResponse {
+    right: 20px;
+}
+
+/* Right side */
+.rightPane {}
+
+.menuPane {} /* Not implemented yet */
+
+.timerPane {}
+
+.timerLabel, .timerCount {
+    position: fixed;
+    bottom: 20px;
+    color: lime;
+}
+
+.timerLabel {
+    left: 20px;
+}
+
+.timerCount {
+    right: 20px;
+}
