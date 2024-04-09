@@ -247,6 +247,7 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
             // Right side, timer countdown and controls (eventually).
             VStack::new(cx, |cx| {
                 HStack::new(cx, |_cx| {})  // Exists to take top spot in Vstack
+                //.height(Percentage(90.0))
                 .class("menuPane");
                 HStack::new(cx, |cx| {
                     Label::new(cx, "Next refresh in:")

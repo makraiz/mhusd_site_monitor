@@ -34,7 +34,9 @@
 /* Right side */
 .rightPane {}
 
-.menuPane {} /* Not implemented yet */
+.menuPane {
+    height: 90%;
+}
 
 .timerPane {}
 
