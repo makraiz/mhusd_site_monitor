@@ -40,6 +40,8 @@ enum ViziaEvent {
     TimerIncrement,             // 1 second increments.
     TimerReset,                 // Sent when timer reaches 0.
     PingResponse(PingResponse), // Sent from tokio thread, first string is Key, second string is Value.
+    MenuTogglePressed,          // Show/hide menu pane.
+    TimerDurationChanged(i32),  // Change the timer duration.  
 }
 
 /// Application data / model.  
@@ -49,6 +51,8 @@ struct AppData {
     timer: Timer,
     timer_count: i32,
     tx: mpsc::Sender<TokioEvent>,
+    menu_visible: bool,
+    timer_duration: i32,
 }
 impl Model for AppData {
     fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
@@ -62,7 +66,7 @@ impl Model for AppData {
                 }
                 ViziaEvent::TimerReset => {
                     let _ = self.tx.send(TokioEvent::TimerElapsed); // TODO: Handle potential errors.
-                    self.timer_count = 30;
+                    self.timer_count = self.timer_duration;
                 }
                 ViziaEvent::PingResponse(response) => {
                     if let Some(i) = self
@@ -74,6 +78,12 @@ impl Model for AppData {
                     } else {
                         self.sites.push(response.clone());
                     }
+                }
+                ViziaEvent::MenuTogglePressed => {
+                    self.menu_visible = !self.menu_visible
+                }
+                ViziaEvent::TimerDurationChanged(t) => {
+                    self.timer_duration = *t;
                 }
             }
         })
@@ -221,6 +231,8 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
             timer,
             timer_count: 30,
             tx,
+            menu_visible: false,
+            timer_duration: 30,
         }
         .build(cx);
         
@@ -246,9 +258,44 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
 
             // Right side, timer countdown and controls (eventually).
             VStack::new(cx, |cx| {
-                HStack::new(cx, |_cx| {})  // Exists to take top spot in Vstack
-                //.height(Percentage(90.0))
-                .class("menuPane");
+                HStack::new(cx, |cx| {
+                    Element::new(cx);  // Exists to take up space.
+                    Label::new(cx, "Menu")
+                    .class("menuToggleLabel");
+                    Switch::new(cx, AppData::menu_visible)
+                    .on_toggle(|cx| cx.emit(ViziaEvent::MenuTogglePressed))
+                    .class("menuToggleButton");
+                })
+                .class("menuButtonBar");
+                HStack::new(cx, |cx| {
+                    Binding::new(cx, AppData::menu_visible, |cx, show| {
+                        if show.get(cx) {
+                            VStack::new(cx, |cx| {
+                                HStack::new(cx, |cx| { // Refresh now button
+                                    Element::new(cx);  // Exists to take up space. 
+                                    Button::new(cx, |cx| {
+                                        Label::new(cx, "Refresh now")
+                                    })
+                                    .on_press(|ex| ex.emit(ViziaEvent::TimerReset));
+                                })
+                                .class("menuInputRow");
+                                
+                                HStack::new(cx, |cx| { // Timer interval control
+                                    Element::new(cx);  // Exists to take up space.
+                                    Label::new(cx, "Refresh interval: ")
+                                    .class("menuInputLabel");
+                                    Textbox::new(cx, AppData::timer_duration)
+                                    .on_submit(|ex, text, _| {
+                                        ex.emit(ViziaEvent::TimerDurationChanged(text))
+                                    })
+                                    .class("menuInput");
+                                }).class("menuInputRow");
+                            })
+                            .class("menuPane");
+                        }
+                    });   
+                })
+                .class("menuPaneContainer");     
                 HStack::new(cx, |cx| {
                     Label::new(cx, "Next refresh in:")
                         .class("timerLabel");

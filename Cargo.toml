@@ -1,6 +1,6 @@
 [package]
 name = "mhusd_site_monitor"
-version = "0.1.8"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -25,3 +25,4 @@ vizia = {git = "https://github.com/vizia/vizia"}
 #  04/05/24 -- v0.1.6 -  Removed unnecessary flexbox. 
 #  04/08/24 -- v0.1.7 -  CSS Stylesheet added, removed code that could be handled by CSS.  
 #  04/09/24 -- v0.1.8 -  CSS style fixes.  
+#  04/09/24 -- v0.2.0 -  Building the menu.  Added variable timer duration and refresh now. 

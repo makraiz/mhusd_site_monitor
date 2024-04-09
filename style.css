@@ -32,17 +32,50 @@
 }
 
 /* Right side */
-.rightPane {}
+.rightPane {
+    height: 100%;
+}
 
-.menuPane {
+.menuButtonBar {
+    height: 5%;
+}
+
+.menuToggleLabel {
+    color: white;
+}
+
+.menuToggleButton {
+    position: fixed;
+    right: 0px;
+}
+
+.menuPaneContainer { 
     height: 90%;
 }
 
-.timerPane {}
+.menuPane {
+}
+
+.menuInputRow {
+}
+
+.menuInputLabel {
+    transform: translateX(0%) translateY(25%);
+    color: white;
+    position: fixed;
+}
+
+.menuInput {
+    position: fixed;
+    right: 0px;
+}
+
+.timerPane {
+    height: 5%;
+}
 
 .timerLabel, .timerCount {
     position: fixed;
-    bottom: 20px;
     color: lime;
 }
 
