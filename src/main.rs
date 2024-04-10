@@ -260,7 +260,7 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
             VStack::new(cx, |cx| {
                 HStack::new(cx, |cx| {
                     Element::new(cx);  // Exists to take up space.
-                    Label::new(cx, "Menu")
+                    Label::new(cx, "Show Controls ")
                     .class("menuToggleLabel");
                     Switch::new(cx, AppData::menu_visible)
                     .on_toggle(|cx| cx.emit(ViziaEvent::MenuTogglePressed))
@@ -276,7 +276,8 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
                                     Button::new(cx, |cx| {
                                         Label::new(cx, "Refresh now")
                                     })
-                                    .on_press(|ex| ex.emit(ViziaEvent::TimerReset));
+                                    .on_press(|ex| ex.emit(ViziaEvent::TimerReset))
+                                    .class("menuInput");
                                 })
                                 .class("menuInputRow");
                                 
