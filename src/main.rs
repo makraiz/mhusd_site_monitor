@@ -271,15 +271,6 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
                     Binding::new(cx, AppData::menu_visible, |cx, show| {
                         if show.get(cx) {
                             VStack::new(cx, |cx| {
-                                HStack::new(cx, |cx| { // Refresh now button
-                                    Element::new(cx);  // Exists to take up space. 
-                                    Button::new(cx, |cx| {
-                                        Label::new(cx, "Refresh now")
-                                    })
-                                    .on_press(|ex| ex.emit(ViziaEvent::TimerReset))
-                                    .class("menuInput");
-                                })
-                                .class("menuInputRow");
                                 
                                 HStack::new(cx, |cx| { // Timer interval control
                                     Element::new(cx);  // Exists to take up space.
@@ -291,6 +282,17 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
                                     })
                                     .class("menuInput");
                                 }).class("menuInputRow");
+
+                                HStack::new(cx, |cx| { // Refresh now button
+                                    Element::new(cx);  // Exists to take up space. 
+                                    Button::new(cx, |cx| {
+                                        Label::new(cx, "Refresh now")
+                                    })
+                                    .on_press(|ex| ex.emit(ViziaEvent::TimerReset))
+                                    .class("menuInput");
+                                })
+                                .class("menuInputRow");
+
                             })
                             .class("menuPane");
                         }
