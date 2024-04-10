@@ -9,23 +9,20 @@ use vizia::prelude::*;
 
 fn main() {
     // Set up communications channel for data to get from GUI thread to tokio thread.
-    let (vizia_tx, tokio_rx) = mpsc::channel::<TokioEvent>(); // Listens for data/events from GUI thread.
-
-    // Read site data, make a copy for each thread to own.
-    let site_data = read_sites();
-    let site_data2 = sites_to_pings(site_data.clone());
+    let (vizia_tx, tokio_rx) = mpsc::channel::<TokioEvent>(); // Listens for data/events from GUI thread.;
 
     // Spawn the tokio thread
-    let _tokio_handle = std::thread::spawn(|| tokio_main(tokio_rx, site_data));
+    let _tokio_handle = std::thread::spawn(|| tokio_main(tokio_rx));
 
-    // GUI runs on main thread.
-    vizia_main(vizia_tx, site_data2); // Blocking.
+    // GUI blocks on main thread.
+    vizia_main(vizia_tx);
 }
 
 /// Used for sending signals to Tokio thread via mspc channel.  
 #[derive(Clone)]
 enum TokioEvent {
     EventProxy(ContextProxy),
+    RefreshSites,
     TimerElapsed,
 }
 
@@ -42,6 +39,7 @@ enum ViziaEvent {
     PingResponse(PingResponse), // Sent from tokio thread, first string is Key, second string is Value.
     MenuTogglePressed,          // Show/hide menu pane.
     TimerDurationChanged(i32),  // Change the timer duration.  
+    RefreshSites,
 }
 
 /// Application data / model.  
@@ -85,6 +83,11 @@ impl Model for AppData {
                 ViziaEvent::TimerDurationChanged(t) => {
                     self.timer_duration = *t;
                 }
+                ViziaEvent::RefreshSites => {
+                    self.sites = sites_to_pings(read_sites());
+                    let _ = self.tx.send(TokioEvent::RefreshSites);
+                    cx.emit(ViziaEvent::TimerReset);
+                }
             }
         })
     }
@@ -106,9 +109,10 @@ struct PingResponse {
 
 /// Initates the runtime loop.  Must send ContextProxy first over mpsc channel, else panic!  
 #[tokio::main] // Creates the runtime for us.
-async fn tokio_main(rx: mpsc::Receiver<TokioEvent>, sites: BTreeMap<String, IpAddr>) {
+async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
     const DEF_TIMEOUT: u64 = 4;
     const DEF_PAYLOAD: [u8; 256] = [0; 256];
+    let mut sites: BTreeMap<String, IpAddr> = read_sites();
 
     // Create the ping clients.
     let client_v4 = Client::new(&Config::default()).expect("Couldn't create IPv4 Client!");
@@ -133,6 +137,7 @@ async fn tokio_main(rx: mpsc::Receiver<TokioEvent>, sites: BTreeMap<String, IpAd
                 // Handle the event
                 match e {
                     TokioEvent::EventProxy(_) => panic!("Received another EventProxy!"), // We should not ever receive a second proxy.
+                    TokioEvent::RefreshSites => sites = read_sites(),  // Recieved a signal to update the sites.  
                     TokioEvent::TimerElapsed => {
                         // Loop through all the sites.
                         for (name, address) in sites.iter() {
@@ -209,7 +214,7 @@ async fn ping(
     };
 }
 
-fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
+fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
     // Spin up the GUI.
     let _ = Application::new(move |cx| {
         // Create & send ContextProxy to Tokio thread for event messaging.
@@ -224,6 +229,8 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
 
         // First round of pings.
         let _ = tx.send(TokioEvent::TimerElapsed);
+
+        let sites = sites_to_pings(read_sites());
 
         // Create the data model for the GUI context.
         AppData {
@@ -292,6 +299,17 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>, sites: Vec<PingResponse>) {
                                     .class("menuInput");
                                 })
                                 .class("menuInputRow");
+
+                                HStack::new(cx, |cx| { // Refresh now button
+                                    Element::new(cx);  // Exists to take up space. 
+                                    Button::new(cx, |cx| {
+                                        Label::new(cx, "Reload Sites")
+                                    })
+                                    .on_press(|ex| ex.emit(ViziaEvent::RefreshSites))
+                                    .class("menuInput");
+                                })
+                                .class("menuInputRow");
+
 
                             })
                             .class("menuPane");
