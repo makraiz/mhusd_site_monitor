@@ -39,7 +39,7 @@ enum ViziaEvent {
     PingResponse(PingResponse), // Sent from tokio thread, first string is Key, second string is Value.
     MenuTogglePressed,          // Show/hide menu pane.
     TimerDurationChanged(i32),  // Change the timer duration.  
-    RefreshSites,
+    RefreshSites,               // Reloads sites.json. 
 }
 
 /// Application data / model.  
@@ -300,10 +300,10 @@ fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
                                 })
                                 .class("menuInputRow");
 
-                                HStack::new(cx, |cx| { // Refresh now button
+                                HStack::new(cx, |cx| { // Reload sites button
                                     Element::new(cx);  // Exists to take up space. 
                                     Button::new(cx, |cx| {
-                                        Label::new(cx, "Reload Sites")
+                                        Label::new(cx, "Reload sites")
                                     })
                                     .on_press(|ex| ex.emit(ViziaEvent::RefreshSites))
                                     .class("menuInput");
