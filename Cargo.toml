@@ -1,6 +1,6 @@
 [package]
 name = "mhusd_site_monitor"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -31,3 +31,4 @@ vizia = {git = "https://github.com/vizia/vizia"}
 #  04/10/24 -- v0.3.0 -  Added the ability to hot reload sites.json.  
 #  04/10/24 -- v0.3.1 -  Fixed some comments. 
 #  04/11/24 -- v0.3.2 -  Refactored code. 
+#  04/11/24 -- v0.3.3 -  More refactoring. 

@@ -35,88 +35,97 @@ pub fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
 
         // Window Layout
         HStack::new(cx, |cx| {
-            // Left side, site names and responses.
-            List::new(cx, AppData::sites, |cx, _, site| {
-                HStack::new(cx, |cx| {
-                    Label::new(cx, site.then(PingResponse::name))
-                        .class("siteName");
-                    Label::new(cx, site.then(PingResponse::response))
-                        .class("siteResponse");
-                })
-                .col_between(Stretch(1.0))
-                .class("siteRow")
-                .toggle_class("siteRowError", site.then(PingResponse::is_err));                    
-            })
-            .class("leftPane");
-
-            // Right side, timer countdown and controls (eventually).
-            VStack::new(cx, |cx| {
-                HStack::new(cx, |cx| {
-                    Element::new(cx);  // Exists to take up space.
-                    Label::new(cx, "Show Controls ")
-                    .class("menuToggleLabel");
-                    Switch::new(cx, AppData::menu_visible)
-                    .on_toggle(|cx| cx.emit(ViziaEvent::MenuTogglePressed))
-                    .class("menuToggleButton");
-                })
-                .class("menuButtonBar");
-                HStack::new(cx, |cx| {
-                    Binding::new(cx, AppData::menu_visible, |cx, show| {
-                        if show.get(cx) {
-                            VStack::new(cx, |cx| {
-                                
-                                HStack::new(cx, |cx| { // Timer interval control
-                                    Element::new(cx);  // Exists to take up space.
-                                    Label::new(cx, "Refresh interval: ")
-                                    .class("menuInputLabel");
-                                    Textbox::new(cx, AppData::timer_duration)
-                                    .on_submit(|ex, text, _| {
-                                        ex.emit(ViziaEvent::TimerDurationChanged(text))
-                                    })
-                                    .class("menuInput");
-                                }).class("menuInputRow");
-
-                                HStack::new(cx, |cx| { // Refresh now button
-                                    Element::new(cx);  // Exists to take up space. 
-                                    Button::new(cx, |cx| {
-                                        Label::new(cx, "Refresh now")
-                                    })
-                                    .on_press(|ex| ex.emit(ViziaEvent::TimerReset))
-                                    .class("menuInput");
-                                })
-                                .class("menuInputRow");
-
-                                HStack::new(cx, |cx| { // Reload sites button
-                                    Element::new(cx);  // Exists to take up space. 
-                                    Button::new(cx, |cx| {
-                                        Label::new(cx, "Reload sites")
-                                    })
-                                    .on_press(|ex| ex.emit(ViziaEvent::RefreshSites))
-                                    .class("menuInput");
-                                })
-                                .class("menuInputRow");
-
-
-                            })
-                            .class("menuPane");
-                        }
-                    });   
-                })
-                .class("menuPaneContainer");     
-                HStack::new(cx, |cx| {
-                    Label::new(cx, "Next refresh in:")
-                        .class("timerLabel");
-                    Label::new(cx, AppData::timer_count)
-                        .class("timerCount");
-                })
-                .class("timerPane")
-                .col_between(Stretch(1.0));
-            })
-            .class("rightPane")
-            .row_between(Stretch(1.0));
+            left_side(cx);
+            right_side(cx);
+            
+            
         })
         .class("windowBody");
     })
     .title("MHUSD Site Monitor")
     .run();
+}
+
+// Left side, site names and responses.
+fn left_side(cx: &mut Context) -> Handle<List> {
+    List::new(cx, AppData::sites, |cx, _, site| {
+        HStack::new(cx, |cx| {
+            Label::new(cx, site.then(PingResponse::name))
+                .class("siteName");
+            Label::new(cx, site.then(PingResponse::response))
+                .class("siteResponse");
+        })
+        .col_between(Stretch(1.0))
+        .class("siteRow")
+        .toggle_class("siteRowError", site.then(PingResponse::is_err));                    
+    })
+    .class("leftPane")
+}
+
+// Right side, timer countdown and controls.
+fn right_side(cx: &mut Context) -> Handle<VStack> {
+    VStack::new(cx, |cx| {
+        HStack::new(cx, |cx| {
+            Element::new(cx);  // Exists to take up space.
+            Label::new(cx, "Show Controls ")
+            .class("menuToggleLabel");
+            Switch::new(cx, AppData::menu_visible)
+            .on_toggle(|cx| cx.emit(ViziaEvent::MenuTogglePressed))
+            .class("menuToggleButton");
+        })
+        .class("menuButtonBar");
+        HStack::new(cx, |cx| {
+            Binding::new(cx, AppData::menu_visible, |cx, show| {
+                if show.get(cx) {
+                    VStack::new(cx, |cx| {
+                        
+                        HStack::new(cx, |cx| { // Timer interval control
+                            Element::new(cx);  // Exists to take up space.
+                            Label::new(cx, "Refresh interval: ")
+                            .class("menuInputLabel");
+                            Textbox::new(cx, AppData::timer_duration)
+                            .on_submit(|ex, text, _| {
+                                ex.emit(ViziaEvent::TimerDurationChanged(text))
+                            })
+                            .class("menuInput");
+                        }).class("menuInputRow");
+
+                        HStack::new(cx, |cx| { // Refresh now button
+                            Element::new(cx);  // Exists to take up space. 
+                            Button::new(cx, |cx| {
+                                Label::new(cx, "Refresh now")
+                            })
+                            .on_press(|ex| ex.emit(ViziaEvent::TimerReset))
+                            .class("menuInput");
+                        })
+                        .class("menuInputRow");
+
+                        HStack::new(cx, |cx| { // Reload sites button
+                            Element::new(cx);  // Exists to take up space. 
+                            Button::new(cx, |cx| {
+                                Label::new(cx, "Reload sites")
+                            })
+                            .on_press(|ex| ex.emit(ViziaEvent::RefreshSites))
+                            .class("menuInput");
+                        })
+                        .class("menuInputRow");
+
+
+                    })
+                    .class("menuPane");
+                }
+            });   
+        })
+        .class("menuPaneContainer");     
+        HStack::new(cx, |cx| {
+            Label::new(cx, "Next refresh in:")
+                .class("timerLabel");
+            Label::new(cx, AppData::timer_count)
+                .class("timerCount");
+        })
+        .class("timerPane")
+        .col_between(Stretch(1.0));
+    })
+    .class("rightPane")
+    .row_between(Stretch(1.0))
 }
