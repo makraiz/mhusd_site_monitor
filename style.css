@@ -3,7 +3,9 @@
 }
 
 /* Left side */
-.leftPane {}
+.leftPane {
+    height: 100%;
+}
 
 .siteRow {
     position: relative;
@@ -31,6 +33,12 @@
     right: 20px;
 }
 
+.timeStamp {
+    position: fixed;
+    height: 5%;
+    color: lime;
+}
+
 /* Right side */
 .rightPane {
     height: 100%;
@@ -55,6 +63,7 @@
 }
 
 .menuPane {
+    height: 100%;
 }
 
 .menuInputRow {

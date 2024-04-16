@@ -46,6 +46,7 @@ pub struct AppData {
     pub tx: mpsc::Sender<TokioEvent>,
     pub menu_visible: bool,
     pub timer_duration: i32,
+    pub current_time: DateTime<Local>,
 }
 impl Model for AppData {
     fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
@@ -59,6 +60,7 @@ impl Model for AppData {
                 }
                 ViziaEvent::TimerReset => {
                     let _ = self.tx.send(TokioEvent::TimerElapsed); // TODO: Handle potential errors.
+                    self.current_time = Local::now();
                     self.timer_count = self.timer_duration;
                 }
                 ViziaEvent::PingResponse(response) => {

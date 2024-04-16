@@ -13,6 +13,8 @@ pub fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
             _ => {}
         });
 
+        let current_time = Local::now();
+
         // First round of pings.
         let _ = tx.send(TokioEvent::TimerElapsed);
 
@@ -26,6 +28,7 @@ pub fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
             tx,
             menu_visible: false,
             timer_duration: 30,
+            current_time,
         }
         .build(cx);
         
@@ -47,17 +50,22 @@ pub fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
 }
 
 // Left side, site names and responses.
-fn left_side(cx: &mut Context) -> Handle<List> {
-    List::new(cx, AppData::sites, |cx, _, site| {
-        HStack::new(cx, |cx| {
-            Label::new(cx, site.then(PingResponse::name))
-                .class("siteName");
-            Label::new(cx, site.then(PingResponse::response))
-                .class("siteResponse");
-        })
-        .col_between(Stretch(1.0))
-        .class("siteRow")
-        .toggle_class("siteRowError", site.then(PingResponse::is_err));                    
+fn left_side(cx: &mut Context) -> Handle<VStack> {
+    VStack::new(cx, |cx| {
+        List::new(cx, AppData::sites, |cx, _, site| {
+            HStack::new(cx, |cx| {
+                Label::new(cx, site.then(PingResponse::name))
+                    .class("siteName");
+                Label::new(cx, site.then(PingResponse::response))
+                    .class("siteResponse");
+            })
+            .col_between(Stretch(1.0))
+            .class("siteRow")
+            .toggle_class("siteRowError", site.then(PingResponse::is_err));                    
+        });
+        Element::new(cx); //Exists to take up space
+        Label::new(cx, AppData::current_time.map(|t| format!("Last Update: {}", t.format("%r"))))
+        .class("timeStamp");
     })
     .class("leftPane")
 }
