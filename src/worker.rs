@@ -85,24 +85,18 @@ pub async fn ping(
     let _ = match pinger.ping(PingSequence(random()), &payload).await {
         Ok((IcmpPacket::V4(_packet), dur)) => cx.emit(ViziaEvent::PingResponse(PingResponse {
             name: site.name,
-            response: format!("{dur:0.2?}"),
+            response: Some(dur),
             is_err: false,
         })),
         Ok((IcmpPacket::V6(_packet), dur)) => cx.emit(ViziaEvent::PingResponse(PingResponse {
             name: site.name,
-            response: format!("{dur:0.2?}"),
+            response: Some(dur),
             is_err: false,
         })),
-        Err(e) => {
-            let msg = match e {
-                surge_ping::SurgeError::Timeout { seq: _ } => format!("Timeout"),
-                _ => format!("{e}"),
-            };
-            cx.emit(ViziaEvent::PingResponse(PingResponse {
+        Err(_) => cx.emit(ViziaEvent::PingResponse(PingResponse {
                 name: site.name,
-                response: msg,
+                response: None,
                 is_err: true,
-            }))
-        }, 
+        })), 
     };
 }

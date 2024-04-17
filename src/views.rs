@@ -56,7 +56,13 @@ fn left_side(cx: &mut Context) -> Handle<VStack> {
             HStack::new(cx, |cx| {
                 Label::new(cx, site.then(PingResponse::name))
                     .class("siteName");
-                Label::new(cx, site.then(PingResponse::response))
+                Label::new(cx, site.then(PingResponse::response).map(|r| {
+                    if let Some(resp) = r {
+                        format!("{resp:.2?}")
+                    } else {
+                        format!("Timeout!")
+                    }
+                }))
                     .class("siteResponse");
             })
             .col_between(Stretch(1.0))

@@ -30,8 +30,8 @@ pub fn sites_to_pings(sites: BTreeMap<String, IpAddr>) -> Vec<PingResponse> {
     for (name, _) in sites {
         map.push(PingResponse {
             name,
-            response: String::from("Pending..."),
-            is_err: false,
+            response: None,
+            is_err: true,
         });
     }
     map
@@ -94,7 +94,7 @@ impl Model for AppData {
 #[derive(Lens, Clone, PartialEq, Data)]
 pub struct PingResponse {
     pub name: String,
-    pub response: String,
+    pub response: Option<Duration>,
     pub is_err: bool,
 }
 
