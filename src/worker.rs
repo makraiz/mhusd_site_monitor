@@ -30,7 +30,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                 // Handle the event
                 match e {
                     TokioEvent::EventProxy(_) => panic!("Received another EventProxy!"), // We should not ever receive a second proxy.
-                    TokioEvent::RefreshSites => sites = read_sites(),  // Recieved a signal to update the sites.  
+                    TokioEvent::RefreshSites => sites = read_sites(), // Recieved a signal to update the sites.
                     TokioEvent::TimerElapsed => {
                         // Loop through all the sites.
                         for (name, address) in sites.iter() {
@@ -64,7 +64,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                     }
                 }
             }
-            Err(_e) => {},
+            Err(_e) => {}
         }
     }
 }
@@ -94,9 +94,9 @@ pub async fn ping(
             is_err: false,
         })),
         Err(_) => cx.emit(ViziaEvent::PingResponse(PingResponse {
-                name: site.name,
-                response: None,
-                is_err: true,
-        })), 
+            name: site.name,
+            response: None,
+            is_err: true,
+        })),
     };
 }

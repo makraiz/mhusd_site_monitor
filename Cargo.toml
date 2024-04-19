@@ -1,6 +1,6 @@
 [package]
 name = "mhusd_site_monitor"
-version = "0.3.5"
+version = "0.4.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -35,3 +35,4 @@ vizia = {git = "https://github.com/vizia/vizia"}
 #  04/11/24 -- v0.3.3 -  More refactoring. 
 #  04/15/24 -- v0.3.4 -  Added time stamp for last refresh.  
 #  04/17/24 -- v0.3.5 -  Changed PingResponse to hold Duration instead of String
+#  04/18/24 -- v0.4.0 -  Can now enable average (mean) view.  

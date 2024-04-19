@@ -12,10 +12,23 @@ pub enum TokioEvent {
 pub enum ViziaEvent {
     TimerIncrement,             // 1 second increments.
     TimerReset,                 // Sent when timer reaches 0.
-    PingResponse(PingResponse), // Sent from tokio thread, first string is Key, second string is Value.
+    PingResponse(PingResponse), // Sent from tokio thread.
     MenuTogglePressed,          // Show/hide menu pane.
-    TimerDurationChanged(i32),  // Change the timer duration.  
-    RefreshSites,               // Reloads sites.json. 
+    TimerDurationChanged(i32),  // Change the timer duration.
+    RefreshSites,               // Reloads sites.json.
+    AverageTogglePressed,       // Toggle between display averages, current ping.
+}
+
+/// Populates a BTreeMap for AppData::sites_history
+pub fn get_history(sites: &Vec<PingResponse>) -> Vec<PingHistory> {
+    let mut sites_history = Vec::new();
+    for site in sites {
+        sites_history.push(PingHistory {
+            name: site.name.clone(),
+            history: vec![site.clone()],
+        });
+    }
+    sites_history
 }
 
 /// Maps sites.json.  Panics if unable to read sites.json or unable to parse the data within the file.  
@@ -47,6 +60,8 @@ pub struct AppData {
     pub menu_visible: bool,
     pub timer_duration: i32,
     pub current_time: DateTime<Local>,
+    pub show_average: bool,
+    pub sites_history: Vec<PingHistory>,
 }
 impl Model for AppData {
     fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
@@ -73,10 +88,26 @@ impl Model for AppData {
                     } else {
                         self.sites.push(response.clone());
                     }
+                    if self.show_average {
+                        if let Some(pos) = self
+                            .sites_history
+                            .iter()
+                            .position(|h| h.name == response.name)
+                        {
+                            self.sites_history
+                                .get_mut(pos)
+                                .unwrap()
+                                .history
+                                .push(response.clone());
+                        } else {
+                            self.sites_history.push(PingHistory {
+                                name: response.name.clone(),
+                                history: vec![response.clone()],
+                            })
+                        }
+                    }
                 }
-                ViziaEvent::MenuTogglePressed => {
-                    self.menu_visible = !self.menu_visible
-                }
+                ViziaEvent::MenuTogglePressed => self.menu_visible = !self.menu_visible,
                 ViziaEvent::TimerDurationChanged(t) => {
                     self.timer_duration = *t;
                 }
@@ -85,8 +116,35 @@ impl Model for AppData {
                     let _ = self.tx.send(TokioEvent::RefreshSites);
                     cx.emit(ViziaEvent::TimerReset);
                 }
+                ViziaEvent::AverageTogglePressed => {
+                    self.sites_history = get_history(&self.sites);
+                    self.show_average = !self.show_average
+                }
             }
         })
+    }
+}
+
+/// Data structure for a collection of PingResponses.
+#[derive(Lens, Clone, PartialEq, Data)]
+pub struct PingHistory {
+    pub name: String,
+    pub history: Vec<PingResponse>,
+}
+impl PingHistory {
+    /// Returns a String containing an average of all Durations collected so far.  Discards errors.  
+    pub fn avg(&self) -> String {
+        let l = &self.history.len();
+        let mut sum = Duration::from_micros(0);
+        for result in &self.history {
+            if let Some(response) = result.response {
+                sum += response
+            }
+        }
+        if sum == Duration::from_micros(0) {
+            return String::from("Error!");
+        }
+        format!("{:.2?}", sum / *l as u32)
     }
 }
 

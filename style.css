@@ -35,6 +35,7 @@
 
 .timeStamp {
     position: fixed;
+    left: 20px;
     height: 5%;
     color: lime;
 }
