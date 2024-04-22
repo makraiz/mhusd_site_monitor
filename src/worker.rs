@@ -4,7 +4,8 @@ use super::*;
 #[tokio::main] // Creates the runtime for us.
 pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
     const DEF_TIMEOUT: u64 = 4;
-    const DEF_PAYLOAD: [u8; 256] = [0; 256];
+    //const DEF_PAYLOAD: [u8; 256] = [0; 256];
+    let mut payload = Payload::Tiny;
     let mut sites: BTreeMap<String, IpAddr> = read_sites();
 
     // Create the ping clients.
@@ -31,6 +32,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                 match e {
                     TokioEvent::EventProxy(_) => panic!("Received another EventProxy!"), // We should not ever receive a second proxy.
                     TokioEvent::RefreshSites => sites = read_sites(), // Recieved a signal to update the sites.
+                    TokioEvent::PayloadChanged(p) => payload = p,
                     TokioEvent::TimerElapsed => {
                         // Loop through all the sites.
                         for (name, address) in sites.iter() {
@@ -47,7 +49,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                                         client_v4.clone(),
                                         site,
                                         DEF_TIMEOUT,
-                                        &DEF_PAYLOAD,
+                                        payload.to_bytes(),
                                     ));
                                 }
                                 IpAddr::V6(_) => {
@@ -56,7 +58,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                                         client_v6.clone(),
                                         site,
                                         DEF_TIMEOUT,
-                                        &DEF_PAYLOAD,
+                                        payload.to_bytes(),
                                     ));
                                 }
                             }
@@ -75,14 +77,14 @@ pub async fn ping(
     client: Client,
     site: SiteAddress,
     timeout: u64,
-    payload: &[u8],
+    payload: Vec<u8>,
 ) {
     // Create the pinger.
     let mut pinger = client.pinger(site.addr, PingIdentifier(random())).await;
     pinger.timeout(Duration::from_secs(timeout));
 
     // Get the result, send as event back to GUI.
-    let _ = match pinger.ping(PingSequence(random()), payload).await {
+    let _ = match pinger.ping(PingSequence(random()), &payload).await {
         Ok((IcmpPacket::V4(_packet), dur)) => cx.emit(ViziaEvent::PingResponse(PingResponse {
             name: site.name,
             response: Some(dur),

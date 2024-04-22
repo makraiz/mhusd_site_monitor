@@ -1,11 +1,48 @@
 use super::*;
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Payload {
+    Tiny,
+    Small,
+    Medium,
+    Large,
+    Huge,
+    Giant
+}
+impl Payload {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        match self {
+            Payload::Tiny => Vec::from([0; 32]),
+            Payload::Small => Vec::from([0; 64]),
+            Payload::Medium => Vec::from([0; 128]),
+            Payload::Large => Vec::from([0; 256]),
+            Payload::Huge => Vec::from([0; 512]),
+            Payload::Giant => Vec::from([0; 1024]),
+        }
+    }
+}
+impl std::fmt::Display for Payload {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match *self {
+            Payload::Tiny => "32 B",
+            Payload::Small => "64 B",
+            Payload::Medium => "128 B",
+            Payload::Large => "256 B",
+            Payload::Huge => "512 B",
+            Payload::Giant => "1 KB",
+        };
+        write!(f, "{str}")
+    }
+}
+
+
 /// Used for sending signals to Tokio thread via mspc channel.  
 #[derive(Clone)]
 pub enum TokioEvent {
     EventProxy(ContextProxy),
     RefreshSites,
     TimerElapsed,
+    PayloadChanged(Payload),
 }
 
 /// Application events.  Events can be sent from Tokio thread via ContextProxy.  
@@ -17,6 +54,7 @@ pub enum ViziaEvent {
     TimerDurationChanged(i32),  // Change the timer duration.
     RefreshSites,               // Reloads sites.json.
     AverageTogglePressed,       // Toggle between display averages, current ping.
+    PayloadChanged(Payload),    // Change payload
 }
 
 /// Populates a Vec of SiteAverages
@@ -59,6 +97,7 @@ pub struct AppData {
     pub current_time: DateTime<Local>,
     pub show_average: bool,
     pub history: Vec<SiteAverage>,
+    pub payload: Payload,
 }
 impl Model for AppData {
     fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
@@ -113,6 +152,10 @@ impl Model for AppData {
                         h.clear()
                     }
                     self.show_average = !self.show_average
+                }
+                ViziaEvent::PayloadChanged(p) => {
+                    self.payload = *p;
+                    let _ = self.tx.send(TokioEvent::PayloadChanged(self.payload));
                 }
             }
         })
