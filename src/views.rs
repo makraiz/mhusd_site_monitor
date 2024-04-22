@@ -36,6 +36,7 @@ pub fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
             show_average: false,
             history,
             payload: Payload::Tiny,
+            timeout: 4,
         }
         .build(cx);
 
@@ -129,6 +130,18 @@ fn right_side(cx: &mut Context) -> Handle<VStack> {
                         .class("menuButtonBar");
 
                         HStack::new(cx, |cx| {
+                            // Timeout controls
+                            Element::new(cx); // Exists to take up space.
+                            Label::new(cx, "Timeout: ").class("menuInputLabel");
+                            Textbox::new(cx, AppData::timeout)
+                                .on_submit(|ex, text, _| {
+                                    ex.emit(ViziaEvent::TimeoutDurationChanged(text))
+                                })
+                                .class("menuInput");
+                        })
+                        .class("menuInputRow");
+
+                        HStack::new(cx, |cx| {
                             // Timer interval control
                             Element::new(cx); // Exists to take up space.
                             Label::new(cx, "Refresh interval: ").class("menuInputLabel");
@@ -159,17 +172,30 @@ fn right_side(cx: &mut Context) -> Handle<VStack> {
                         .class("menuInputRow");
 
                         VStack::new(cx, |cx| {
-                            Label::new(cx, "Payload Size: ").class("menuToggleLabel");
+                            // Payload size radio
+                            Label::new(cx, "Payload size: ").class("menuToggleLabel");
                             HStack::new(cx, |cx| {
                                 for i in 0..6 {
                                     let current_payload = index_to_payload(i);
                                     VStack::new(cx, move |cx| {
-                                        RadioButton::new(cx, AppData::payload.map(move |pl| *pl == current_payload)).on_select(move |cx| cx.emit(ViziaEvent::PayloadChanged(current_payload))).id(format!("button_{i}")).class("menuInput");
-                                        Label::new(cx, &current_payload.to_string()).describing(format!("button_{i}")).class("menuInputLabel");
+                                        RadioButton::new(
+                                            cx,
+                                            AppData::payload.map(move |pl| *pl == current_payload),
+                                        )
+                                        .on_select(move |cx| {
+                                            cx.emit(ViziaEvent::PayloadChanged(current_payload))
+                                        })
+                                        .id(format!("button_{i}"))
+                                        .class("menuInput");
+                                        Label::new(cx, &current_payload.to_string())
+                                            .describing(format!("button_{i}"))
+                                            .class("menuInputLabel");
                                     });
                                 }
-                            }).class("menuInputRow");
-                        }).row_between(Pixels(20.0));
+                            })
+                            .class("menuInputRow");
+                        })
+                        .row_between(Pixels(20.0));
                     })
                     .class("menuPane");
                 }
@@ -187,6 +213,7 @@ fn right_side(cx: &mut Context) -> Handle<VStack> {
     .row_between(Stretch(1.0))
 }
 
+// Helper for payload size radio buttons
 fn index_to_payload(index: usize) -> Payload {
     match index {
         0 => Payload::Tiny,

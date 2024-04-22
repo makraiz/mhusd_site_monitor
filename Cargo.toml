@@ -1,6 +1,6 @@
 [package]
 name = "mhusd_site_monitor"
-version = "0.5.0"
+version = "1.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -38,3 +38,4 @@ vizia = {git = "https://github.com/vizia/vizia"}
 #  04/18/24 -- v0.4.0 -  Can now enable average (mean) view.  
 #  04/22/24 -- v0.4.1 -  Eliminated memory leak.  
 #  04/22/24 -- v0.5.0 -  Added configurable payload size.  
+#  04/22/24 -- v1.0.0 -  Added configurable timeout. 

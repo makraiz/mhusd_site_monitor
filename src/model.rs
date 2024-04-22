@@ -7,7 +7,7 @@ pub enum Payload {
     Medium,
     Large,
     Huge,
-    Giant
+    Giant,
 }
 impl Payload {
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -35,7 +35,6 @@ impl std::fmt::Display for Payload {
     }
 }
 
-
 /// Used for sending signals to Tokio thread via mspc channel.  
 #[derive(Clone)]
 pub enum TokioEvent {
@@ -43,18 +42,20 @@ pub enum TokioEvent {
     RefreshSites,
     TimerElapsed,
     PayloadChanged(Payload),
+    TimeoutChanged(u64),
 }
 
 /// Application events.  Events can be sent from Tokio thread via ContextProxy.  
 pub enum ViziaEvent {
-    TimerIncrement,             // 1 second increments.
-    TimerReset,                 // Sent when timer reaches 0.
-    PingResponse(PingResponse), // Sent from tokio thread.
-    MenuTogglePressed,          // Show/hide menu pane.
-    TimerDurationChanged(i32),  // Change the timer duration.
-    RefreshSites,               // Reloads sites.json.
-    AverageTogglePressed,       // Toggle between display averages, current ping.
-    PayloadChanged(Payload),    // Change payload
+    TimerIncrement,              // 1 second increments.
+    TimerReset,                  // Sent when timer reaches 0.
+    PingResponse(PingResponse),  // Sent from tokio thread.
+    MenuTogglePressed,           // Show/hide menu pane.
+    TimerDurationChanged(i32),   // Change the timer duration.
+    RefreshSites,                // Reloads sites.json.
+    AverageTogglePressed,        // Toggle between display averages, current ping.
+    PayloadChanged(Payload),     // Change payload
+    TimeoutDurationChanged(u64), // Change the timeout duration.
 }
 
 /// Populates a Vec of SiteAverages
@@ -98,6 +99,7 @@ pub struct AppData {
     pub show_average: bool,
     pub history: Vec<SiteAverage>,
     pub payload: Payload,
+    pub timeout: u64,
 }
 impl Model for AppData {
     fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
@@ -156,6 +158,10 @@ impl Model for AppData {
                 ViziaEvent::PayloadChanged(p) => {
                     self.payload = *p;
                     let _ = self.tx.send(TokioEvent::PayloadChanged(self.payload));
+                }
+                ViziaEvent::TimeoutDurationChanged(i) => {
+                    self.timeout = *i;
+                    let _ = self.tx.send(TokioEvent::TimeoutChanged(self.timeout));
                 }
             }
         })

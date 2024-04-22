@@ -3,8 +3,9 @@ use super::*;
 /// Initates the runtime loop.  Must send ContextProxy first over mpsc channel, else panic!  
 #[tokio::main] // Creates the runtime for us.
 pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
-    const DEF_TIMEOUT: u64 = 4;
+    //const DEF_TIMEOUT: u64 = 4;
     //const DEF_PAYLOAD: [u8; 256] = [0; 256];
+    let mut timeout: u64 = 4;
     let mut payload = Payload::Tiny;
     let mut sites: BTreeMap<String, IpAddr> = read_sites();
 
@@ -33,6 +34,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                     TokioEvent::EventProxy(_) => panic!("Received another EventProxy!"), // We should not ever receive a second proxy.
                     TokioEvent::RefreshSites => sites = read_sites(), // Recieved a signal to update the sites.
                     TokioEvent::PayloadChanged(p) => payload = p,
+                    TokioEvent::TimeoutChanged(t) => timeout = t,
                     TokioEvent::TimerElapsed => {
                         // Loop through all the sites.
                         for (name, address) in sites.iter() {
@@ -48,7 +50,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                                         cx.clone(),
                                         client_v4.clone(),
                                         site,
-                                        DEF_TIMEOUT,
+                                        timeout,
                                         payload.to_bytes(),
                                     ));
                                 }
@@ -57,7 +59,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                                         cx.clone(),
                                         client_v6.clone(),
                                         site,
-                                        DEF_TIMEOUT,
+                                        timeout,
                                         payload.to_bytes(),
                                     ));
                                 }
