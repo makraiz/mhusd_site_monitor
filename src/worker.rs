@@ -37,7 +37,7 @@ pub async fn tokio_main(rx: mpsc::Receiver<TokioEvent>) {
                             // Create a SiteAddress for passing
                             let site = SiteAddress {
                                 name: name.clone(),
-                                addr: address.clone(),
+                                addr: *address,
                             };
                             match address {
                                 // Check address type and send the appropriate client to the task
@@ -82,7 +82,7 @@ pub async fn ping(
     pinger.timeout(Duration::from_secs(timeout));
 
     // Get the result, send as event back to GUI.
-    let _ = match pinger.ping(PingSequence(random()), &payload).await {
+    let _ = match pinger.ping(PingSequence(random()), payload).await {
         Ok((IcmpPacket::V4(_packet), dur)) => cx.emit(ViziaEvent::PingResponse(PingResponse {
             name: site.name,
             response: Some(dur),

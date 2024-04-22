@@ -19,16 +19,13 @@ pub enum ViziaEvent {
     AverageTogglePressed,       // Toggle between display averages, current ping.
 }
 
-/// Populates a BTreeMap for AppData::sites_history
-pub fn get_history(sites: &Vec<PingResponse>) -> Vec<PingHistory> {
-    let mut sites_history = Vec::new();
+/// Populates a Vec of SiteAverages
+pub fn start_history(sites: &Vec<PingResponse>) -> Vec<SiteAverage> {
+    let mut sites_averages = Vec::new();
     for site in sites {
-        sites_history.push(PingHistory {
-            name: site.name.clone(),
-            history: vec![site.clone()],
-        });
+        sites_averages.push(SiteAverage::new(site.name.clone()));
     }
-    sites_history
+    sites_averages
 }
 
 /// Maps sites.json.  Panics if unable to read sites.json or unable to parse the data within the file.  
@@ -61,7 +58,7 @@ pub struct AppData {
     pub timer_duration: i32,
     pub current_time: DateTime<Local>,
     pub show_average: bool,
-    pub sites_history: Vec<PingHistory>,
+    pub history: Vec<SiteAverage>,
 }
 impl Model for AppData {
     fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
@@ -89,21 +86,16 @@ impl Model for AppData {
                         self.sites.push(response.clone());
                     }
                     if self.show_average {
-                        if let Some(pos) = self
-                            .sites_history
-                            .iter()
-                            .position(|h| h.name == response.name)
+                        if response.is_err {
+                            // Discard error results.
+                            return;
+                        }
+                        if let Some(pos) = self.history.iter().position(|h| h.name == response.name)
                         {
-                            self.sites_history
+                            self.history
                                 .get_mut(pos)
                                 .unwrap()
-                                .history
-                                .push(response.clone());
-                        } else {
-                            self.sites_history.push(PingHistory {
-                                name: response.name.clone(),
-                                history: vec![response.clone()],
-                            })
+                                .add(response.response.unwrap())
                         }
                     }
                 }
@@ -117,7 +109,9 @@ impl Model for AppData {
                     cx.emit(ViziaEvent::TimerReset);
                 }
                 ViziaEvent::AverageTogglePressed => {
-                    self.sites_history = get_history(&self.sites);
+                    for h in &mut self.history {
+                        h.clear()
+                    }
                     self.show_average = !self.show_average
                 }
             }
@@ -125,26 +119,34 @@ impl Model for AppData {
     }
 }
 
-/// Data structure for a collection of PingResponses.
+/// Replacement for PingHistory.  Attempt #2
 #[derive(Lens, Clone, PartialEq, Data)]
-pub struct PingHistory {
+pub struct SiteAverage {
     pub name: String,
-    pub history: Vec<PingResponse>,
+    pub sum: Duration,
+    pub avg: String,
+    pub len: u32,
 }
-impl PingHistory {
-    /// Returns a String containing an average of all Durations collected so far.  Discards errors.  
-    pub fn avg(&self) -> String {
-        let l = &self.history.len();
-        let mut sum = Duration::from_micros(0);
-        for result in &self.history {
-            if let Some(response) = result.response {
-                sum += response
-            }
+impl SiteAverage {
+    pub fn new(name: String) -> Self {
+        SiteAverage {
+            name,
+            sum: Duration::ZERO,
+            avg: String::new(),
+            len: 0,
         }
-        if sum == Duration::from_micros(0) {
-            return String::from("Error!");
-        }
-        format!("{:.2?}", sum / *l as u32)
+    }
+
+    pub fn add(&mut self, result: Duration) {
+        self.sum += result;
+        self.len += 1;
+        self.avg = format!("{:.2?}", self.sum / self.len)
+    }
+
+    pub fn clear(&mut self) {
+        self.len = 0;
+        self.sum = Duration::ZERO;
+        self.avg = String::new();
     }
 }
 

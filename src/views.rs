@@ -8,9 +8,10 @@ pub fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
         let _ = tx.send(TokioEvent::EventProxy(proxy));
 
         // Create a timer that sends an event every second to update the gui
-        let timer = cx.add_timer(Duration::from_secs(1), None, |cx, action| match action {
-            TimerAction::Tick(_) => cx.emit(ViziaEvent::TimerIncrement),
-            _ => {}
+        let timer = cx.add_timer(Duration::from_secs(1), None, |cx, action| {
+            if let TimerAction::Tick(_) = action {
+                cx.emit(ViziaEvent::TimerIncrement)
+            }
         });
 
         // Snapshot of current time.  Gets replaced pretty much immediately.
@@ -21,7 +22,7 @@ pub fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
 
         // Build sites list & history for GUI use.
         let sites = sites_to_pings(read_sites());
-        let sites_history = get_history(&sites);
+        let history = start_history(&sites);
 
         // Create the data model for the GUI context.
         AppData {
@@ -33,7 +34,7 @@ pub fn vizia_main(tx: mpsc::Sender<TokioEvent>) {
             timer_duration: 30,
             current_time,
             show_average: false,
-            sites_history,
+            history,
         }
         .build(cx);
 
@@ -57,23 +58,16 @@ fn left_side(cx: &mut Context) -> Handle<VStack> {
     VStack::new(cx, |cx| {
         Binding::new(cx, AppData::show_average, |cx, show| {
             if show.get(cx) {
-                List::new(cx, AppData::sites_history, |cx, _, site| {
+                List::new(cx, AppData::history, |cx, _, site| {
                     HStack::new(cx, |cx| {
-                        Label::new(cx, site.then(PingHistory::name)).class("siteName");
-                        Label::new(cx, site.map(|h| h.avg())).class("siteResponse");
+                        Label::new(cx, site.then(SiteAverage::name)).class("siteName");
+                        Label::new(cx, site.then(SiteAverage::avg)).class("siteResponse");
                     })
                     .col_between(Stretch(1.0))
                     .class("siteRow")
                     .toggle_class(
                         "siteRowError",
-                        site.then(PingHistory::history).map(|h| {
-                            for i in h {
-                                if !i.is_err {
-                                    return false;
-                                }
-                            }
-                            true
-                        }),
+                        site.then(SiteAverage::avg).map(|h| h.is_empty()),
                     );
                 });
             } else {
@@ -86,7 +80,7 @@ fn left_side(cx: &mut Context) -> Handle<VStack> {
                                 if let Some(resp) = r {
                                     format!("{resp:.2?}")
                                 } else {
-                                    format!("Timeout!")
+                                    "Timeout!".to_string()
                                 }
                             }),
                         )
